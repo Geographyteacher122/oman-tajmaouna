@@ -30,6 +30,8 @@ html,body{height:100%;overflow:hidden;background:linear-gradient(180deg,#fdf1e4,
 .team.mine .chip{background:#ffd84a}
 .pill{align-self:center;background:#fff8e8;border:2px dotted #e6b94a;border-radius:999px;padding:4px 16px;font-weight:700;font-size:clamp(12px,3.3vw,17px);text-align:center;box-shadow:0 3px 8px #0002}
 .ribbon{height:clamp(8px,1.6dvh,14px);border-radius:8px;background:linear-gradient(90deg,#d6212c 0 33%,#fff 33% 50%,#1b8a3a 50% 100%)}
+.foot{display:flex;justify-content:flex-start;padding-top:2px}
+#gear{background:#fff8;border:0;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#6b5a48;opacity:.7;cursor:pointer}
 .credit{text-align:center;font-size:clamp(10px,2.6vw,13px);opacity:.75;padding-top:3px;user-select:none}
 .note{align-self:center;font-size:12px;background:#fff3cd;border-radius:8px;padding:2px 10px}
 .modal{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
@@ -58,6 +60,7 @@ html,body{height:100%;overflow:hidden;background:linear-gradient(180deg,#fdf1e4,
     <div class="pill">⭐ معاً .. نرتقي ونفخر بعُماننا ⭐</div>
     <div class="ribbon"></div>
   </div>
+  <div class="foot"><button id="gear" aria-label="لوحة المعلم"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
 </div>
 
 <div class="modal" id="m"><div class="card" id="c"></div></div>
@@ -67,7 +70,7 @@ html,body{height:100%;overflow:hidden;background:linear-gradient(180deg,#fdf1e4,
 const SUPABASE_URL = "https://qwbpowwkkazoyifdjvfn.supabase.co";
 const SUPABASE_KEY = "sb_publishable_g6ei9rQk59jJNjOLQZ8aIw_3_FVxZy6"; // مفتاح عام آمن للنشر
 const DEFAULT_MAX  = 7;       // عدد الأشخاص في الفريق الواحد (يمكن تغييره من لوحة المعلم)
-const ADMIN_PIN    = "2026";  // رمز لوحة المعلم (اضغط على عبارة «معاً .. نرتقي» 5 مرات)
+const ADMIN_PIN    = "2026";  // رمز لوحة المعلم (زر الترس أسفل الصفحة)
 /* ===================== */
 
 const TEAMS=[
@@ -163,10 +166,15 @@ window.close_=close;
 $("#m").addEventListener("click",e=>{if(e.target.id==="m")close();});
 
 /* ---- لوحة المعلم ---- */
-let taps=0,tt; $(".pill").addEventListener("click",()=>{taps++;clearTimeout(tt);tt=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;admin();}});
+$("#gear").addEventListener("click",admin);
 function admin(){
-  const p=prompt("رمز المعلم"); if(p!==ADMIN_PIN) return;
-  load().then(()=>{
+  open(`<h2>لوحة المعلم</h2><p>أدخل الرمز للمتابعة</p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="الرمز"><div class="err" id="pe"></div><button class="btn" id="pk" style="background:#1558c0">دخول</button><button class="btn sec" onclick="close_()">إلغاء</button>`);
+  setTimeout(()=>$("#pin").focus(),50);
+  const go=()=>{ if($("#pin").value!==ADMIN_PIN){ $("#pe").textContent="الرمز غير صحيح"; return; } panel(); };
+  $("#pk").onclick=go; $("#pin").onkeydown=e=>{if(e.key==="Enter")go();};
+}
+function panel(){
+  load().then(()=>"ok",()=>"fail").then(res=>{ if(res==="fail"){ $("#pe").textContent="تعذّر الاتصال بقاعدة البيانات"; return; }
     open(`<div class="adm"><h2>لوحة المعلم</h2>
     <div class="row"><span>عدد الأعضاء في الفريق</span><span><input id="mx" type="number" min="1" max="100" value="${max}" style="width:80px;margin:0;padding:4px"> <button class="btn" style="background:#1558c0;font-size:14px;padding:6px 12px" id="sv">حفظ</button></span></div>
     ${TEAMS.map(t=>`<div class="row" style="display:block"><b style="color:${t.c2}">${t.name} (${state[t.id].length}/${max})</b><ol>${state[t.id].map(m=>`<li>${m.name.replace(/</g,"")}</li>`).join("")}</ol></div>`).join("")}
